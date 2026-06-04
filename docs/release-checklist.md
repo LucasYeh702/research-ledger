@@ -2,6 +2,9 @@
 
 Use this checklist before publishing a public preview or tagged release.
 
+For the first GitHub public preview, also follow
+[docs/publish-runbook.md](publish-runbook.md).
+
 ## Required Gates
 
 Run these commands from the repository root:

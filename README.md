@@ -168,8 +168,9 @@ For first-run research boundary design, see
 [docs/scope-declaration.md](docs/scope-declaration.md).
 For PDFs and larger attachments, see
 [docs/storage-policy.md](docs/storage-policy.md).
-For release and dependency hygiene, see [docs/release-checklist.md](docs/release-checklist.md)
-and [docs/dependency-policy.md](docs/dependency-policy.md).
+For release and dependency hygiene, see [docs/release-checklist.md](docs/release-checklist.md),
+[docs/dependency-policy.md](docs/dependency-policy.md), and
+[docs/publish-runbook.md](docs/publish-runbook.md).
 
 ## License
 
