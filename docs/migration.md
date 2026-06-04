@@ -54,6 +54,25 @@ research-ledger delete notes/obsolete.md --reason "merged into newer note"
 research-ledger rename notes/old.md notes/new.md --reason "Obsidian rename"
 ```
 
+## Write Lock Recovery
+
+Write operations create `.research-ledger/write.lock` to preserve the
+single-writer model for `record`, `delete`, `rename`, and `seal`.
+
+If a process is killed while holding the lock, later writes can recover
+automatically when the lock metadata shows all of the following:
+
+- the lock was created on the same host,
+- the lock contains a valid process ID,
+- that process no longer exists, and
+- the lock file has not changed between inspection and removal.
+
+Research Ledger does not automatically remove malformed locks, locks from a
+different host, or locks whose process status cannot be trusted. In those cases,
+it times out rather than risking concurrent writes. Inspect the workspace and
+remove `.research-ledger/write.lock` manually only after confirming no
+`research-ledger` write operation is still running.
+
 ## Hash Policy
 
 Research Ledger stores a raw-byte snapshot for each recorded event and hashes
