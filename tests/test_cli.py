@@ -6,8 +6,15 @@ from typer.testing import CliRunner
 from research_ledger.cli import app
 
 
+def make_cli_runner():
+    try:
+        return CliRunner(mix_stderr=False)
+    except TypeError:
+        return CliRunner()
+
+
 def test_cli_init_record_verify_report(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -27,7 +34,7 @@ def test_cli_init_record_verify_report(tmp_path, monkeypatch):
 
 
 def test_cli_init_accepts_scope_declaration_options(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     notes = tmp_path / "notes"
     notes.mkdir()
@@ -56,7 +63,7 @@ def test_cli_init_accepts_scope_declaration_options(tmp_path, monkeypatch):
 
 
 def test_cli_verify_returns_warning_exit_code_for_working_file_drift(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -72,7 +79,7 @@ def test_cli_verify_returns_warning_exit_code_for_working_file_drift(tmp_path, m
 
 
 def test_cli_verify_no_working_tree_skips_working_file_warnings(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -90,7 +97,7 @@ def test_cli_verify_no_working_tree_skips_working_file_warnings(tmp_path, monkey
 
 
 def test_cli_export_disclosure_outputs_markdown_and_json(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -114,7 +121,7 @@ def test_cli_export_disclosure_outputs_markdown_and_json(tmp_path, monkeypatch):
 def test_cli_export_bundle_excludes_private_key_and_verifies_without_working_tree(
     tmp_path, monkeypatch
 ):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -149,7 +156,7 @@ def test_cli_export_bundle_excludes_private_key_and_verifies_without_working_tre
 
 
 def test_cli_verify_uninitialized_returns_exit_code_3_without_traceback(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
 
     result = runner.invoke(app, ["verify"])
@@ -160,7 +167,7 @@ def test_cli_verify_uninitialized_returns_exit_code_3_without_traceback(tmp_path
 
 
 def test_cli_verify_malformed_metadata_returns_exit_code_3_without_traceback(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
 
     runner.invoke(app, ["init"])
@@ -177,7 +184,7 @@ def test_cli_verify_malformed_metadata_returns_exit_code_3_without_traceback(tmp
 
 
 def test_cli_report_malformed_event_returns_exit_code_3_without_traceback(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -199,7 +206,7 @@ def test_cli_report_malformed_event_returns_exit_code_3_without_traceback(tmp_pa
 def test_cli_export_disclosure_malformed_scope_returns_exit_code_3_without_traceback(
     tmp_path, monkeypatch
 ):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
 
     runner.invoke(app, ["init"])
@@ -216,7 +223,7 @@ def test_cli_export_disclosure_malformed_scope_returns_exit_code_3_without_trace
 
 
 def test_cli_export_disclosure_uninitialized_returns_exit_code_3(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
 
     result = runner.invoke(app, ["export-disclosure"])
@@ -227,7 +234,7 @@ def test_cli_export_disclosure_uninitialized_returns_exit_code_3(tmp_path, monke
 
 
 def test_cli_record_outside_workspace_returns_exit_code_2_without_traceback(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     outside = tmp_path.parent / "outside.md"
     outside.write_text("secret\n", encoding="utf-8")
@@ -243,7 +250,7 @@ def test_cli_record_outside_workspace_returns_exit_code_2_without_traceback(tmp_
 def test_cli_record_internal_ledger_file_returns_exit_code_2_without_traceback(
     tmp_path, monkeypatch
 ):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
 
     runner.invoke(app, ["init"])
@@ -255,7 +262,7 @@ def test_cli_record_internal_ledger_file_returns_exit_code_2_without_traceback(
 
 
 def test_cli_seal_and_report_uninitialized_return_exit_code_3(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
 
     seal_result = runner.invoke(app, ["seal"])
@@ -270,7 +277,7 @@ def test_cli_seal_and_report_uninitialized_return_exit_code_3(tmp_path, monkeypa
 
 
 def test_cli_delete_and_rename_clear_drift_warnings(tmp_path, monkeypatch):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     old_note = tmp_path / "old.md"
     new_note = tmp_path / "new.md"
@@ -297,7 +304,7 @@ def test_cli_delete_and_rename_clear_drift_warnings(tmp_path, monkeypatch):
 def test_cli_verify_uses_structured_issue_code_for_snapshot_missing(
     tmp_path, monkeypatch
 ):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
@@ -318,7 +325,7 @@ def test_cli_verify_uses_structured_issue_code_for_snapshot_missing(
 def test_cli_verify_uses_structured_issue_code_for_malformed_event(
     tmp_path, monkeypatch
 ):
-    runner = CliRunner()
+    runner = make_cli_runner()
     monkeypatch.chdir(tmp_path)
     note = tmp_path / "note.md"
     note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
