@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import socket
 
 import pytest
 
@@ -98,6 +99,74 @@ def test_seal_refuses_when_write_lock_is_held(tmp_path, monkeypatch):
 
     with pytest.raises(TimeoutError, match="ledger write lock"):
         ledger.seal(label="blocked")
+
+
+def test_record_recovers_stale_write_lock_for_dead_same_host_pid(tmp_path, monkeypatch):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    note = workspace / "note.md"
+    note.write_text("claim\n", encoding="utf-8")
+    ledger = Ledger.init(workspace)
+    ledger.lock_path.write_text(
+        json.dumps(
+            {
+                "pid": 999999999,
+                "hostname": socket.gethostname(),
+                "created_at": "2026-06-04T00:00:00Z",
+                "token": "stale-test",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(ledger_module, "_process_exists", lambda pid: False)
+
+    event = ledger.record(note, event_type="claim")
+
+    assert event.sequence == 1
+    assert not ledger.lock_path.exists()
+
+
+def test_record_keeps_active_write_lock_for_live_same_host_pid(tmp_path, monkeypatch):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    note = workspace / "note.md"
+    note.write_text("claim\n", encoding="utf-8")
+    ledger = Ledger.init(workspace)
+    lock_body = (
+        json.dumps(
+            {
+                "pid": os.getpid(),
+                "hostname": socket.gethostname(),
+                "created_at": "2026-06-04T00:00:00Z",
+                "token": "active-test",
+            }
+        )
+        + "\n"
+    )
+    ledger.lock_path.write_text(lock_body, encoding="utf-8")
+    monkeypatch.setattr(ledger_module, "LOCK_TIMEOUT_SECONDS", 0, raising=False)
+    monkeypatch.setattr(ledger_module, "_process_exists", lambda pid: True)
+
+    with pytest.raises(TimeoutError, match="ledger write lock"):
+        ledger.record(note, event_type="claim")
+
+    assert ledger.lock_path.read_text(encoding="utf-8") == lock_body
+
+
+def test_record_keeps_malformed_write_lock(tmp_path, monkeypatch):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    note = workspace / "note.md"
+    note.write_text("claim\n", encoding="utf-8")
+    ledger = Ledger.init(workspace)
+    ledger.lock_path.write_text("locked\n", encoding="utf-8")
+    monkeypatch.setattr(ledger_module, "LOCK_TIMEOUT_SECONDS", 0, raising=False)
+
+    with pytest.raises(TimeoutError, match="ledger write lock"):
+        ledger.record(note, event_type="claim")
+
+    assert ledger.lock_path.read_text(encoding="utf-8") == "locked\n"
 
 
 def test_init_refuses_to_regenerate_missing_private_key_for_existing_ledger(tmp_path):

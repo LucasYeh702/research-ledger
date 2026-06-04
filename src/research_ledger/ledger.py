@@ -15,6 +15,7 @@ import base64
 import os
 import json
 import shutil
+import socket
 import time
 import unicodedata
 import uuid
@@ -962,12 +963,14 @@ def _ledger_write_lock(lock_path: Path):
         try:
             fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         except FileExistsError as exc:
+            if _recover_stale_write_lock(lock_path):
+                continue
             if time.monotonic() - start >= LOCK_TIMEOUT_SECONDS:
                 raise TimeoutError(f"ledger write lock is held: {lock_path}") from exc
             time.sleep(LOCK_POLL_SECONDS)
         else:
             try:
-                os.write(fd, f"pid={os.getpid()}\n".encode("utf-8"))
+                os.write(fd, _write_lock_payload())
                 yield
             finally:
                 os.close(fd)
@@ -976,6 +979,74 @@ def _ledger_write_lock(lock_path: Path):
                 except FileNotFoundError:
                     pass
             return
+
+
+def _write_lock_payload() -> bytes:
+    payload = {
+        "pid": os.getpid(),
+        "hostname": socket.gethostname(),
+        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "token": uuid.uuid4().hex,
+    }
+    return (json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+
+
+def _recover_stale_write_lock(lock_path: Path) -> bool:
+    try:
+        original = lock_path.read_bytes()
+    except FileNotFoundError:
+        return True
+    try:
+        payload = json.loads(original.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(payload, dict):
+        return False
+    pid = payload.get("pid")
+    hostname = payload.get("hostname")
+    if not isinstance(pid, int) or pid <= 0:
+        return False
+    if hostname != socket.gethostname():
+        return False
+    if _process_exists(pid):
+        return False
+    try:
+        if lock_path.read_bytes() != original:
+            return False
+        lock_path.unlink()
+    except FileNotFoundError:
+        return True
+    return True
+
+
+def _process_exists(pid: int) -> bool:
+    if os.name == "nt":
+        return _windows_process_exists(pid)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return True
+    return True
+
+
+def _windows_process_exists(pid: int) -> bool:
+    try:
+        import ctypes
+    except Exception:  # noqa: BLE001 - if process probing is unavailable, keep the lock.
+        return True
+
+    process_query_limited_information = 0x1000
+    error_invalid_parameter = 87
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+    if handle:
+        kernel32.CloseHandle(handle)
+        return True
+    return ctypes.get_last_error() != error_invalid_parameter
 
 
 def _latest_sequence_by_content_path(raw_lines: list[str]) -> dict[str, int]:
