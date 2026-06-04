@@ -1,0 +1,45 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uvx ruff check .
+      - run: uv run --python ${{ matrix.python-version }} --extra dev pytest -q
+      - run: uv build
+      - name: Wheel install smoke
+        shell: bash
+        run: |
+          uv run --python ${{ matrix.python-version }} python -m venv /tmp/research-ledger-smoke
+          . /tmp/research-ledger-smoke/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl
+          tmpdir="$(mktemp -d)"
+          cd "$tmpdir"
+          research-ledger --help
+          research-ledger init \
+            --scope-title "CI smoke workspace" \
+            --scope-description "Temporary CI smoke test research scope." \
+            --include .
+          printf '# Claim\n' > claim.md
+          research-ledger record claim.md --type claim
+          research-ledger seal --label smoke
+          research-ledger verify
+          research-ledger report
+          research-ledger export-disclosure --output disclosure.md
+          research-ledger export-bundle --output audit-bundle.zip
+          test -s disclosure.md
+          mkdir extracted
+          python -m zipfile -e audit-bundle.zip extracted
+          cd extracted
+          research-ledger verify --no-working-tree
