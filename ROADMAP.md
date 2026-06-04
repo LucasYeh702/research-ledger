@@ -18,15 +18,20 @@ for AI-assisted research workflows.
 
 ## Near-Term Hardening
 
-- Stale write-lock recovery after interrupted writes.
-- Optional external timestamp anchoring design for seals.
+- External timestamp anchoring implementation for seals.
 - Better audit-bundle redaction guidance for licensed PDFs and private sources.
 - Additional examples for Obsidian-based research projects.
 - More explicit compatibility notes for cloud-sync providers.
 
+## Completed After Public Preview
+
+- Stale write-lock recovery after interrupted writes.
+- Optional external timestamp anchoring design for seals.
+- Obsidian workflow design for one-project ledger roots.
+
 ## Later Directions
 
-- Optional Obsidian workflow integration.
+- Optional Obsidian plugin or command integration.
 - Key rotation and revocation design.
 - External witness or transparency-log integrations.
 - Richer disclosure templates for academic, legal, and policy research.

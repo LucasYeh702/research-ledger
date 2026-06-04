@@ -136,6 +136,8 @@ uv run research-ledger rename notes/old.md notes/new.md --reason "Obsidian renam
 This stops stale missing-file drift warnings while preserving the original
 snapshot history.
 
+For an Obsidian-oriented workflow, see [docs/obsidian-workflow.md](docs/obsidian-workflow.md).
+
 ## Disclosure Export
 
 `export-disclosure` turns the current ledger into an AI-use disclosure draft. It
@@ -164,6 +166,8 @@ OpenTimestamps can be added to strengthen timestamp claims.
 See [SPEC.md](SPEC.md), [docs/threat-model.md](docs/threat-model.md), and
 [SECURITY.md](SECURITY.md) before relying on this tool. If you use Obsidian or
 sync vaults between computers, read [docs/migration.md](docs/migration.md).
+For optional external timestamp anchoring design, see
+[docs/external-anchoring.md](docs/external-anchoring.md).
 For third-party review, see [docs/audit-bundle.md](docs/audit-bundle.md). For
 private key handling, see [docs/key-management.md](docs/key-management.md).
 For first-run research boundary design, see

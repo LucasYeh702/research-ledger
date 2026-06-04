@@ -111,6 +111,8 @@ snapshot。
 `verify` 產生 warning。若筆記是刻意刪除或改名，請用 `delete` / `rename`
 留下 lifecycle event，避免舊路徑永久警告。
 
+Obsidian 工作流設計見 [docs/obsidian-workflow.md](docs/obsidian-workflow.md)。
+
 ## 安裝與測試
 
 需要 Python 3.10 以上版本。
@@ -153,6 +155,8 @@ OpenTimestamps 作為外部時間錨定，並加入 Git signed tags 作為公開
 - [docs/key-management.md](docs/key-management.md)
 - [docs/scope-declaration.md](docs/scope-declaration.md)
 - [docs/storage-policy.md](docs/storage-policy.md)
+- [docs/external-anchoring.md](docs/external-anchoring.md)
+- [docs/obsidian-workflow.md](docs/obsidian-workflow.md)
 - [docs/publish-runbook.md](docs/publish-runbook.md)
 - [SUPPORT.md](SUPPORT.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
