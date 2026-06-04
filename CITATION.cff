@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use Research Ledger in academic or software work, please cite the project repository."
+title: "Research Ledger"
+type: software
+version: "0.1.0"
+license: "Apache-2.0"
+repository-code: "https://github.com/siderealunar/research-ledger"
+abstract: "A local-first tamper-evident ledger for AI-assisted research workflows."
+keywords:
+  - "AI-assisted research"
+  - "research provenance"
+  - "tamper-evident ledger"
+  - "Obsidian"
+  - "academic writing"
+authors:
+  - name: "Research Ledger Maintainers"

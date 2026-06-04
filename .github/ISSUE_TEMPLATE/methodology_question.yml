@@ -1,0 +1,31 @@
+name: Methodology question
+description: Ask about research workflow, disclosure, scope, or audit-bundle interpretation.
+title: "[Methodology]: "
+labels:
+  - methodology
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Research Ledger does not provide legal, institutional, publisher, or evidence-rule advice. Keep examples non-private.
+  - type: textarea
+    id: context
+    attributes:
+      label: Research context
+      description: What kind of research workflow are you trying to record?
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What interpretation or workflow decision are you trying to make?
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Mention relevant privacy, copyright, advisor, or institutional constraints without sharing private material.
+    validations:
+      required: false

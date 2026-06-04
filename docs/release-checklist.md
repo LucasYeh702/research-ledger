@@ -40,6 +40,8 @@ research-ledger export-bundle --output audit-bundle.zip
 ## Manual Review
 
 - Confirm `README.md` and `README.zh-Hant.md` quickstart commands match the CLI.
+- Confirm `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `ROADMAP.md`, `CITATION.cff`,
+  issue templates, and the pull request template are appropriate for public preview.
 - Confirm `SPEC.md` matches the event signing and hashing implementation.
 - Confirm `SECURITY.md` still lists known limitations honestly.
 - Confirm `CHANGELOG.md` has an entry for the release.

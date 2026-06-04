@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest a focused improvement to Research Ledger.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What research workflow or verification problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Describe the smallest useful version of the change.
+    validations:
+      required: true
+  - type: textarea
+    id: trust_model
+    attributes:
+      label: Trust model impact
+      description: Does this change affect signatures, hashes, snapshots, external anchoring, or disclosure claims?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

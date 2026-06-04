@@ -50,6 +50,9 @@ git push -u origin main
 - Confirm GitHub Actions runs the test workflow successfully.
 - Confirm `README.md`, `README.zh-Hant.md`, `SECURITY.md`, and `LICENSE`
   render correctly on GitHub.
+- Confirm `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `ROADMAP.md`,
+  `CITATION.cff`, issue templates, and the pull request template appear in the
+  repository community health files.
 - Confirm no generated `dist/`, `cache/`, `.research-ledger/`, `.venv/`, or
   Python cache files appear in the repository browser.
 - Create the first issue for stale write lock recovery.

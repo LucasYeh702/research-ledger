@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible CLI, verification, packaging, or documentation bug.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not upload private research notes, PDFs, audit bundles, private keys, or raw snapshots.
+  - type: input
+    id: version
+    attributes:
+      label: Research Ledger version or commit
+      placeholder: "0.1.0 or git commit"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "macOS 15, Python 3.12, uv 0.x"
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands run
+      description: Paste exact commands and non-private output.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Use non-private files only.
+    validations:
+      required: false

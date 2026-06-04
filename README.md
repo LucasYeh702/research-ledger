@@ -172,6 +172,10 @@ For release and dependency hygiene, see [docs/release-checklist.md](docs/release
 [docs/dependency-policy.md](docs/dependency-policy.md), and
 [docs/publish-runbook.md](docs/publish-runbook.md).
 
+For project support and community norms, see [SUPPORT.md](SUPPORT.md),
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [ROADMAP.md](ROADMAP.md), and
+[CITATION.cff](CITATION.cff).
+
 ## License
 
 Code is licensed under Apache-2.0.

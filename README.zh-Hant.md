@@ -152,3 +152,7 @@ OpenTimestamps 作為外部時間錨定，並加入 Git signed tags 作為公開
 - [docs/scope-declaration.md](docs/scope-declaration.md)
 - [docs/storage-policy.md](docs/storage-policy.md)
 - [docs/publish-runbook.md](docs/publish-runbook.md)
+- [SUPPORT.md](SUPPORT.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [ROADMAP.md](ROADMAP.md)
+- [CITATION.cff](CITATION.cff)
