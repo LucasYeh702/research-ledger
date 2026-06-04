@@ -113,6 +113,8 @@ snapshot。
 
 ## 安裝與測試
 
+需要 Python 3.10 以上版本。
+
 ```bash
 uv sync --extra dev
 uv run pytest

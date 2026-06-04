@@ -68,6 +68,8 @@ For local development inside this repository, prefix commands with `uv run`.
 
 ## Quick Start
 
+Requires Python 3.10 or newer.
+
 ```bash
 uv sync --extra dev
 uv run research-ledger init \
