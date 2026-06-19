@@ -49,6 +49,7 @@ LOCK_TIMEOUT_SECONDS = 10.0
 LOCK_POLL_SECONDS = 0.05
 PRIVATE_DIR_MODE = 0o700
 PRIVATE_FILE_MODE = 0o600
+MAX_SEAL_LABEL_BYTES = 64
 ISSUE_MALFORMED = "malformed"
 ISSUE_SNAPSHOT_MISSING = "snapshot_missing"
 
@@ -168,6 +169,10 @@ class Seal(BaseModel):
     merkle_root: str
     tip_event_hash: str
     event_hashes: list[str]
+    author_public_key: Optional[str] = None
+    key_id: Optional[str] = None
+    signature: Optional[str] = None
+    event_hash: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -687,17 +692,27 @@ class Ledger:
             if not events:
                 raise ValueError("cannot seal an empty ledger")
             metadata = self.metadata()
+            private_key = self._load_private_key()
             event_hashes = [event.event_hash for event in events]
-            seal = Seal(
-                ledger_id=metadata.ledger_id,
-                label=label,
-                created_at=_now_utc(),
-                event_count=len(events),
-                merkle_root=merkle_root(event_hashes),
-                tip_event_hash=event_hashes[-1],
-                event_hashes=event_hashes,
-            )
             safe_label = "".join(char if char.isalnum() or char in "-_" else "-" for char in label)
+            if not safe_label:
+                safe_label = "seal"
+            if len(safe_label.encode("utf-8")) > MAX_SEAL_LABEL_BYTES:
+                raise ValueError(f"seal label must be {MAX_SEAL_LABEL_BYTES} UTF-8 bytes or fewer")
+            payload = {
+                "ledger_id": metadata.ledger_id,
+                "label": label,
+                "created_at": _now_utc(),
+                "event_count": len(events),
+                "merkle_root": merkle_root(event_hashes),
+                "tip_event_hash": event_hashes[-1],
+                "event_hashes": event_hashes,
+                "author_public_key": metadata.author_public_key,
+                "key_id": metadata.key_id,
+            }
+            signature = _sign_b64(private_key, canonical_json_bytes(payload))
+            seal_hash = hash_bytes(canonical_json_bytes({**payload, "signature": signature}))
+            seal = Seal(**payload, signature=signature, event_hash=seal_hash)
             seal_path = self.seals_dir / f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{safe_label}.json"
             temporary = self.seals_dir / f".pending-{uuid.uuid4().hex}.json"
             _write_private_text(
@@ -757,14 +772,32 @@ class Ledger:
 
     def _verify_seals(self, event_hashes_by_sequence: list[str]) -> list[tuple[str, Optional[str]]]:
         issues: list[tuple[str, Optional[str]]] = []
+        metadata = self.metadata()
         for seal_path in sorted(self.seals_dir.glob("*.json")):
             try:
                 seal = Seal(**json.loads(seal_path.read_text(encoding="utf-8")))
             except Exception as exc:  # noqa: BLE001 - verifier reports malformed seals.
                 issues.append((f"seal {seal_path.name}: malformed seal: {exc}", ISSUE_MALFORMED))
                 continue
-            if seal.ledger_id != self.metadata().ledger_id:
+            if seal.ledger_id != metadata.ledger_id:
                 issues.append((f"seal {seal_path.name}: ledger id mismatch", None))
+            if not seal.author_public_key or not seal.key_id or not seal.signature or not seal.event_hash:
+                issues.append((f"seal {seal_path.name}: missing seal signature", None))
+            else:
+                if seal.author_public_key != metadata.author_public_key:
+                    issues.append((f"seal {seal_path.name}: public key mismatch", None))
+                if seal.key_id != metadata.key_id:
+                    issues.append((f"seal {seal_path.name}: key id mismatch", None))
+                payload = seal.model_dump(exclude={"signature", "event_hash"})
+                try:
+                    _verify_signature(metadata.author_public_key, seal.signature, canonical_json_bytes(payload))
+                except (InvalidSignature, ValueError) as exc:
+                    issues.append((f"seal {seal_path.name}: invalid seal signature: {exc}", None))
+                expected_event_hash = hash_bytes(
+                    canonical_json_bytes(seal.model_dump(exclude={"event_hash"}))
+                )
+                if seal.event_hash != expected_event_hash:
+                    issues.append((f"seal {seal_path.name}: seal event hash mismatch", None))
             if seal.event_count != len(seal.event_hashes):
                 issues.append((f"seal {seal_path.name}: event count mismatch", None))
             if seal.event_hashes != event_hashes_by_sequence[: seal.event_count]:
@@ -992,31 +1025,48 @@ def _write_lock_payload() -> bytes:
 
 
 def _recover_stale_write_lock(lock_path: Path) -> bool:
+    recovery_path = lock_path.with_name(f".{lock_path.name}.recovery")
+    recovery_fd = -1
     try:
-        original = lock_path.read_bytes()
-    except FileNotFoundError:
-        return True
-    try:
-        payload = json.loads(original.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        return False
-    if not isinstance(payload, dict):
-        return False
-    pid = payload.get("pid")
-    hostname = payload.get("hostname")
-    if not isinstance(pid, int) or pid <= 0:
-        return False
-    if hostname != socket.gethostname():
-        return False
-    if _process_exists(pid):
+        recovery_fd = os.open(recovery_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, PRIVATE_FILE_MODE)
+    except FileExistsError:
         return False
     try:
-        if lock_path.read_bytes() != original:
+        os.write(recovery_fd, _write_lock_payload())
+        os.close(recovery_fd)
+        recovery_fd = -1
+        try:
+            original = lock_path.read_bytes()
+        except FileNotFoundError:
+            return True
+        try:
+            payload = json.loads(original.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
             return False
-        lock_path.unlink()
-    except FileNotFoundError:
+        if not isinstance(payload, dict):
+            return False
+        pid = payload.get("pid")
+        hostname = payload.get("hostname")
+        if not isinstance(pid, int) or pid <= 0:
+            return False
+        if hostname != socket.gethostname():
+            return False
+        if _process_exists(pid):
+            return False
+        try:
+            if lock_path.read_bytes() != original:
+                return False
+            lock_path.unlink()
+        except FileNotFoundError:
+            return True
         return True
-    return True
+    finally:
+        if recovery_fd != -1:
+            os.close(recovery_fd)
+        try:
+            recovery_path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def _process_exists(pid: int) -> bool:

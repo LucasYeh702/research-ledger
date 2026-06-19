@@ -203,6 +203,25 @@ def test_cli_report_malformed_event_returns_exit_code_3_without_traceback(tmp_pa
     assert "Traceback" not in result.stderr
 
 
+def test_cli_report_integrity_failure_returns_exit_code_2(tmp_path, monkeypatch):
+    runner = make_cli_runner()
+    monkeypatch.chdir(tmp_path)
+    note = tmp_path / "note.md"
+    note.write_text("AI 協作研究需要揭露。\n", encoding="utf-8")
+
+    runner.invoke(app, ["init"])
+    runner.invoke(app, ["record", str(note), "--type", "claim"])
+    events_path = tmp_path / ".research-ledger" / "events.jsonl"
+    event = json.loads(events_path.read_text(encoding="utf-8"))
+    event["content_hash"] = "sha256:" + "0" * 64
+    events_path.write_text(json.dumps(event), encoding="utf-8")
+
+    result = runner.invoke(app, ["report"])
+
+    assert result.exit_code == 2
+    assert "status: failed" in result.output
+
+
 def test_cli_export_disclosure_malformed_scope_returns_exit_code_3_without_traceback(
     tmp_path, monkeypatch
 ):
