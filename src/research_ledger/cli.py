@@ -188,6 +188,15 @@ def report() -> None:
     typer.echo(f"status: {status}")
     if events:
         typer.echo(f"tip: {events[-1].event_hash}")
+    if result.ok:
+        if result.warnings:
+            raise typer.Exit(1)
+        return
+    if ISSUE_MALFORMED in result.issue_codes:
+        raise typer.Exit(3)
+    if ISSUE_SNAPSHOT_MISSING in result.issue_codes:
+        raise typer.Exit(4)
+    raise typer.Exit(2)
 
 
 @app.command()

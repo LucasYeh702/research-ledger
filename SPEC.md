@@ -194,15 +194,18 @@ local consistency signal, not trusted external time.
 ## Seal
 
 `research-ledger seal` computes a Merkle root over the current ordered list of
-research event hashes. In v0.1, seals are summary artifacts. Inclusion proof and
-external timestamp anchoring are future work.
+research event hashes. The seal payload is signed by the ledger's Ed25519 key
+and has its own `event_hash` using the same signature and hash rules as genesis,
+scope declarations, and research events. Inclusion proof and external timestamp
+anchoring are future work.
 
 The Merkle tree uses domain-separated leaf and internal-node hashing. Odd leaves
 are promoted to the next layer rather than duplicated, so `[A, B, C]` and
 `[A, B, C, C]` cannot collapse to the same root through last-leaf duplication.
 
-`verify` checks seal files for valid schema, matching ledger id, event hash list,
-event count, tip hash, and Merkle root.
+`verify` checks seal files for valid schema, matching ledger id, matching public
+key and key id, valid seal signature, matching seal event hash, event hash list,
+event count, tip hash, and Merkle root. Unsigned seal files fail verification.
 
 ## Verification Exit Codes
 

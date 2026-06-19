@@ -64,6 +64,6 @@ def _write_tree(archive: zipfile.ZipFile, directory: Path, root: Path) -> None:
     if not directory.exists():
         return
     for path in sorted(directory.rglob("*")):
-        if not path.is_file() or path.name.startswith(".pending-"):
+        if path.is_symlink() or not path.is_file() or path.name.startswith(".pending-"):
             continue
         archive.write(path, path.relative_to(root).as_posix())

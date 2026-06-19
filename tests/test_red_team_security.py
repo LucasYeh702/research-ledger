@@ -1,5 +1,6 @@
 import os
 import json
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 import socket
@@ -7,6 +8,8 @@ import socket
 import pytest
 
 import research_ledger.ledger as ledger_module
+from research_ledger.bundle import export_audit_bundle
+from research_ledger.crypto import merkle_root
 from research_ledger.ledger import Ledger
 
 
@@ -252,6 +255,64 @@ def test_verify_detects_tampered_seal(tmp_path):
 
     assert not result.ok
     assert any("seal merkle root mismatch" in issue for issue in result.issues)
+
+
+def test_verify_rejects_forged_unsigned_seal(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    note = workspace / "note.md"
+    note.write_text("claim\n", encoding="utf-8")
+    ledger = Ledger.init(workspace)
+    event = ledger.record(note, event_type="claim")
+    forged = {
+        "ledger_id": ledger.metadata().ledger_id,
+        "label": "forged",
+        "created_at": "2026-06-04T00:00:00Z",
+        "event_count": 1,
+        "merkle_root": merkle_root([event.event_hash]),
+        "tip_event_hash": event.event_hash,
+        "event_hashes": [event.event_hash],
+    }
+    forged_path = ledger.seals_dir / "20000101T000000Z-forged.json"
+    forged_path.write_text(json.dumps(forged), encoding="utf-8")
+
+    result = Ledger(workspace).verify()
+
+    assert not result.ok
+    assert any("missing seal signature" in issue for issue in result.issues)
+
+
+def test_seal_rejects_overlong_label_with_clean_error(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    note = workspace / "note.md"
+    note.write_text("claim\n", encoding="utf-8")
+    ledger = Ledger.init(workspace)
+    ledger.record(note, event_type="claim")
+
+    with pytest.raises(ValueError, match="seal label"):
+        ledger.seal(label="x" * 65)
+
+
+def test_export_bundle_skips_symlinked_snapshot_entries(tmp_path):
+    if not hasattr(os, "symlink"):
+        pytest.skip("symbolic links are not supported on this platform")
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    note = workspace / "note.md"
+    note.write_text("claim\n", encoding="utf-8")
+    secret = tmp_path / "secret.txt"
+    secret.write_text("private\n", encoding="utf-8")
+    ledger = Ledger.init(workspace)
+    ledger.record(note, event_type="claim")
+    ledger.seal(label="demo")
+    (ledger.snapshots_dir / "leak.txt").symlink_to(secret)
+    bundle_path = tmp_path / "bundle.zip"
+
+    export_audit_bundle(ledger, bundle_path)
+
+    with zipfile.ZipFile(bundle_path) as archive:
+        assert ".research-ledger/snapshots/leak.txt" not in archive.namelist()
 
 
 def test_verify_rejects_extra_event_fields(tmp_path):

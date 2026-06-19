@@ -69,7 +69,8 @@ graph TD
     subgraph SEAL["seal — 封印"]
         D1["cli: seal --label LABEL"] --> D2["Read all event_hashes from events.jsonl"]
         D2 --> D3["merkle_root(event_hashes)"]
-        D3 --> D4["Write seal JSON to seals/"]
+        D3 --> D4["Sign seal payload + compute seal event_hash"]
+        D4 --> D5["Write seal JSON to seals/"]
     end
 
     subgraph VERIFY["verify — 驗證"]
@@ -82,7 +83,7 @@ graph TD
         E3 --> E3d["Verify event_hash"]
         E3 --> E3e["Verify snapshot content_hash"]
         E3 --> E3f["Detect working file drift"]
-        E3a --> E4["Check all seals (merkle_root)"]
+        E3a --> E4["Check all seals (signature + event_hash + merkle_root)"]
         E3b --> E4
         E3c --> E4
         E3d --> E4
@@ -142,7 +143,9 @@ graph LR
     subgraph SEAL["Seal — Merkle 封印"]
         S1["event_hashes = [event1.event_hash, event2.event_hash]"]
         S2["merkle_root(event_hashes)"]
-        S1 --> S2
+        S3["signature = sign(seal payload)"]
+        S4["event_hash = hash(seal payload + signature)"]
+        S1 --> S2 --> S3 --> S4
     end
 
     G_hash -- "chain link" --> E1_prev
@@ -156,7 +159,7 @@ graph LR
 - **前向鏈結**：每個 event 的 `previous_event_hash` 指向前一個事件的 `event_hash`，任何中間事件被竄改都會造成簽章、事件雜湊或鏈結檢查失敗。
 - **簽章來源綁定**：`signature` 涵蓋 payload 全部欄位（不含 `signature` 和 `event_hash`），在本地 key trust model 下可檢查事件是否由 ledger 綁定的 Ed25519 私鑰簽署。這不是法律上的不可否認性保證。
 - **Event hash 完整性**：`event_hash` 涵蓋 payload + `signature`（不含 `event_hash` 本身），確保簽章也無法被替換。
-- **Merkle seal**：對所有 `event_hash` 建構 Merkle tree，根雜湊值可作為整條事件鏈在某個本地里程碑的指紋。
+- **Merkle seal**：對所有 `event_hash` 建構 Merkle tree，根雜湊值可作為整條事件鏈在某個本地里程碑的指紋；seal payload 也會以 ledger 綁定的 Ed25519 key 簽章，避免未持有私鑰者偽造本地 seal。
 
 ---
 
