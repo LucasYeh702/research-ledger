@@ -74,8 +74,8 @@ For PDF and attachment storage choices, see [storage-policy.md](storage-policy.m
 research-ledger init \
   --scope-title "AI-assisted legal thesis research" \
   --scope-description "Research notes, source checks, AI outputs, human adjudication notes, drafts, and disclosure notes for this thesis project." \
-  --include "03-法學碩論" \
-  --exclude "03-法學碩論/90-暫存/private"
+  --include "thesis-notes" \
+  --exclude "thesis-notes/private"
 ```
 
 Use repeatable `--include` and `--exclude` options when needed.
@@ -102,7 +102,7 @@ It does not mean:
 Use the title to name the research line, not the tool:
 
 ```text
-AI 協作法學論文研究
+AI-assisted thesis research
 ```
 
 Use the description to say what is covered:
@@ -114,8 +114,8 @@ Use the description to say what is covered:
 Use includes and excludes to define the Obsidian or filesystem boundary:
 
 ```text
-include: 03-法學碩論
-exclude: 03-法學碩論/90-暫存/private
+include: thesis-notes
+exclude: thesis-notes/private
 ```
 
 ## Review Guidance

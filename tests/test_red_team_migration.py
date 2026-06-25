@@ -7,22 +7,22 @@ from research_ledger.ledger import Ledger
 
 
 def test_moving_entire_obsidian_vault_preserves_verification(tmp_path):
-    original = tmp_path / "法學知識腦-v1"
-    note_dir = original / "03-法學碩論" / "06-人工智慧協作方法框架"
+    original = tmp_path / "research-vault"
+    note_dir = original / "thesis-notes" / "ai-collaboration-method"
     note_dir.mkdir(parents=True)
-    note = note_dir / "001-命題.md"
+    note = note_dir / "001-claim.md"
     note.write_text("AI 協作研究需要可驗證留痕。\n", encoding="utf-8")
 
     ledger = Ledger.init(original)
     event = ledger.record(note, event_type="claim")
     ledger.seal(label="before-move")
-    moved = tmp_path / "新電腦-法學知識腦-v1"
+    moved = tmp_path / "moved-research-vault"
     shutil.copytree(original, moved)
 
     moved_ledger = Ledger(moved)
     moved_event = moved_ledger.events()[0]
 
-    assert event.content_path == "03-法學碩論/06-人工智慧協作方法框架/001-命題.md"
+    assert event.content_path == "thesis-notes/ai-collaboration-method/001-claim.md"
     assert moved_event.content_hash == event.content_hash
     assert moved_ledger.verify().ok
 

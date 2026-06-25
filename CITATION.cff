@@ -4,7 +4,7 @@ title: "Research Ledger"
 type: software
 version: "0.1.0"
 license: "Apache-2.0"
-repository-code: "https://github.com/siderealunar/research-ledger"
+repository-code: "https://github.com/LucasYeh702/research-ledger"
 abstract: "A local-first tamper-evident ledger for AI-assisted research workflows."
 keywords:
   - "AI-assisted research"
